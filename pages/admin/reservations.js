@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import MaterialTable from 'material-table';
 import Admin from "layouts/Admin.js";
 
@@ -6,30 +6,10 @@ import Checkbox from '@material-ui/core/Checkbox';
 
 import {
   MuiPickersUtilsProvider,
-  KeyboardDatePicker,
+  DatePicker,
 } from '@material-ui/pickers';
-// import reservationChart from "variables/charts.js";
-
-const reservationChart = {
-  data: [
-    {
-      title: 'Jean',
-      start: '15/02/2021',
-      end: '17/02/2021',
-      nombre: 2,
-      valid: true,
-      paye: true,
-    },
-    {
-      title: 'Helene',
-      start: '03/02/2021',
-      end: '07/02/2021',
-      nombre: 2,
-      valid: false,
-      paye: false,
-    },
-  ],
-};
+import MomentUtils from '@date-io/moment';
+import moment from 'moment';
 
 const table_columns = [
   {
@@ -42,17 +22,11 @@ const table_columns = [
     initialEditValue: new Date(),
     // render: rowData => rowData.start,
     editComponent: ({value, onChange}) => (
-      <MuiPickersUtilsProvider utils={DateFnsUtils}>
-        <KeyboardDatePicker
-          disableToolbar
-          variant="inline"
-          format="dd/MM/yyyy"
-          margin="normal"
-          value={value}
-          onChange={onChange}
-          KeyboardButtonProps={{
-            'aria-label': 'change date',
-          }}
+      <MuiPickersUtilsProvider utils={MomentUtils}>
+        <DatePicker
+          format="DD/MM/yyyy"
+          value={moment(value, 'DD/MM/yyyy')}
+          onChange={date => onChange(date.format('DD/MM/yyyy'))}
         />
       </MuiPickersUtilsProvider>
     )
@@ -63,17 +37,11 @@ const table_columns = [
     validate: rowData => rowData.start > rowData.end ? { isValid: false, helperText: 'La date de fin doit etre après celle darrivée' } : true,
     // render: rowData => moment(rowData.end).format("DD/MM/yyyy"),
     editComponent: ({value, onChange}) => (
-      <MuiPickersUtilsProvider utils={DateFnsUtils}>
-        <KeyboardDatePicker
-          disableToolbar
-          variant="inline"
-          format="dd/MM/yyyy"
-          margin="normal"
-          value={value}
-          onChange={onChange}
-          KeyboardButtonProps={{
-            'aria-label': 'change date',
-          }}
+      <MuiPickersUtilsProvider utils={MomentUtils}>
+        <DatePicker
+          format="DD/MM/yyyy"
+          value={moment(value, 'DD/MM/yyyy')}
+          onChange={date => onChange(date.format('DD/MM/yyyy'))}
         />
       </MuiPickersUtilsProvider>
     )
@@ -122,24 +90,28 @@ const table_columns = [
   },
 ];
 
-
 function Reservations(props) {
-  console.log(props);
+
+  const [reservations, updateReservations] = useState(props.reservations);
+
   return (
     <MaterialTable
       title="Liste des réservations"
       views={['month']}
       columns={table_columns}
-      data={props.reservations.data}
+      data={reservations.data}
+      options={{
+        draggable: false,
+      }}
       editable={{
         onRowAdd: newData =>
           new Promise(resolve => {
             setTimeout(() => {
               resolve();
-              const data = [...props.reservations.data];
+              const data = [...reservations.data];
               data.push(newData);
-              const newReservations = {...props.reservations, data};
-              props.updateReservations(newReservations);
+              const newReservations = {...reservations, data};
+              updateReservations(newReservations);
             }, 600);
           }),
         onRowUpdate: (newData, oldData) =>
@@ -147,10 +119,10 @@ function Reservations(props) {
             setTimeout(() => {
               resolve();
               if (oldData) {
-                const data = [...props.reservations.data];
+                const data = [...reservations.data];
                 data[data.indexOf(oldData)] = newData;
-                const newReservations = {...props.reservations, data};
-                props.updateReservations(newReservations);
+                const newReservations = {...reservations, data};
+                updateReservations(newReservations);
               }
             }, 600);
           }),
@@ -158,10 +130,10 @@ function Reservations(props) {
           new Promise(resolve => {
             setTimeout(() => {
               resolve();
-              const data = [...props.reservations.data];
+              const data = [...reservations.data];
               data.splice(data.indexOf(oldData), 1);
-              const newReservations = {...props.reservations, data};
-              props.updateReservations(newReservations);
+              const newReservations = {...reservations, data};
+              updateReservations(newReservations);
             }, 600);
           }),
       }}
