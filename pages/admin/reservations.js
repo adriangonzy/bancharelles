@@ -20,7 +20,6 @@ const table_columns = [
   {
     title: 'Date de début', field: 'start',
     initialEditValue: new Date(),
-    // render: rowData => rowData.start,
     editComponent: ({value, onChange}) => (
       <MuiPickersUtilsProvider utils={MomentUtils}>
         <DatePicker
@@ -35,7 +34,6 @@ const table_columns = [
     title: "Date de fin", field: 'end',
     initialEditValue: new Date(),
     validate: rowData => rowData.start > rowData.end ? { isValid: false, helperText: 'La date de fin doit etre après celle darrivée' } : true,
-    // render: rowData => moment(rowData.end).format("DD/MM/yyyy"),
     editComponent: ({value, onChange}) => (
       <MuiPickersUtilsProvider utils={MomentUtils}>
         <DatePicker

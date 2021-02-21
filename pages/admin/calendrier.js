@@ -4,21 +4,32 @@ import Admin from "layouts/Admin.js";
 
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import moment from 'moment'
+import MomentUtils from '@date-io/moment';
+
+import {
+  MuiPickersUtilsProvider,
+  DatePicker,
+} from '@material-ui/pickers';
+
+import TextField from '@material-ui/core/TextField';
+import Danger from "components/Typography/Danger.js";
+
+
 // core components
 import { makeStyles } from "@material-ui/core/styles";
 
 import GridItem from "components/Grid/GridItem.js";
 import GridContainer from "components/Grid/GridContainer.js";
-import CustomInput from "components/CustomInput/CustomInput.js";
 import Button from "components/CustomButtons/Button.js";
 import Card from "components/Card/Card.js";
 import CardHeader from "components/Card/CardHeader.js";
 import CardBody from "components/Card/CardBody.js";
 import CardFooter from "components/Card/CardFooter.js";
+import Box from '@material-ui/core/Box';
+
 
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 
-import reservationChart from "variables/charts.js";
 
 const localizer = momentLocalizer(moment)
 
@@ -48,10 +59,9 @@ function createDate(liste) {
   for (const dataPoint of liste) {
     listeDates = listeDates.concat([
       {
-        'title': dataPoint.title,
-        'start': dataPoint.start,
-        // 'end': new Date(dataPoint.end.getTime() + (1000 * 60 * 60 * 24))
-        'end': dataPoint.end,
+        'title': dataPoint.title + ' (' + dataPoint.nombre + ')',
+        'start': moment(dataPoint.start, 'DD/MM/yyyy').toDate(),
+        'end': moment(dataPoint.end, 'DD/MM/yyyy').toDate(),
         'valid': dataPoint.valid,
         'paye': dataPoint.paye
       }
@@ -80,10 +90,41 @@ function eventStyleGetter(event, start, end) {
 
 
 
-function Calendrier() {
+function Calendrier(props) {
     const classes = useStyles();
-    // const myEventsList = createDate(props.reservations.data)
-    const myEventsList = createDate(reservationChart)
+    const [reservations, updateReservations] = React.useState(props.reservations);
+    const myEventsList = createDate(reservations.data);
+
+    const [selectedStartDate, setSelectedStartDate] = React.useState(moment(new Date()));
+    const [selectedEndDate, setSelectedEndDate] = React.useState(moment(new Date()));
+
+    const [reservationName, setReservationName] = React.useState('');
+    const [numberPeople, setNumberPeople] = React.useState('');
+
+    const addReservation = () => {
+      const newData = {
+        title: reservationName,
+        start: selectedStartDate.format("DD/MM/yyyy"),
+        end: selectedEndDate.format("DD/MM/yyyy"),
+        nombre: numberPeople,
+        valid: false,
+        paye: false
+      };
+      new Promise(resolve => {
+        setTimeout(() => {
+          resolve();
+          const data = [...reservations.data];
+          data.push(newData);
+          const newReservations = {...reservations, data};
+          updateReservations(newReservations);
+        }, 600);
+      })
+      setSelectedStartDate(moment(new Date()));
+      setSelectedEndDate(moment(new Date()));
+      setNumberPeople('');
+      setReservationName('');
+    }
+
     return (
       <div>
         <GridContainer>
@@ -105,53 +146,62 @@ function Calendrier() {
           <GridItem xs={12} sm={12} md={4}>
             <Card>
               <CardHeader color="info">
-                <h4 className={classes.cardTitleWhite}>Créez ou modifiez une réservation</h4>
+                <h4 className={classes.cardTitleWhite}>Créer une nouvelle réservation</h4>
               </CardHeader>
               <CardBody>
+              Pour modifier ou supprimer une réservation, allez dans l'onglet Réservations.
                 <GridContainer>
                   <GridItem xs={12} sm={12} md={12}>
-                    Pour modifier une réservation, sélectionnez la sur le calendrier à gauche.
-                    <CustomInput
-                      labelText="Date de début (JJ/MM/AA)"
-                      id="email-address"
-                      formControlProps={{
-                        fullWidth: true
-                      }}
-                    />
+                    <MuiPickersUtilsProvider utils={MomentUtils}>
+                      <DatePicker
+                        format="DD/MM/yyyy"
+                        margin="normal"
+                        label="Date de début"
+                        value={selectedStartDate}
+                        onChange={date => setSelectedStartDate(date)}
+                      />
+                    </MuiPickersUtilsProvider>
                   </GridItem>
                   <GridItem xs={12} sm={12} md={12}>
-                    <CustomInput
-                      labelText="Date de fin (JJ/MM/AA)"
-                      id="first-name"
-                      formControlProps={{
-                        fullWidth: true
-                      }}
-                    />
+                    <MuiPickersUtilsProvider utils={MomentUtils}>
+                      <DatePicker
+                        format="DD/MM/yyyy"
+                        label="Date de fin"
+                        margin="normal"
+                        value={selectedEndDate}
+                        onChange={date => setSelectedEndDate(date)}
+                      />
+                    </MuiPickersUtilsProvider>
                   </GridItem>
                 </GridContainer>
                 <GridContainer>
                   <GridItem xs={12} sm={12} md={6}>
-                    <CustomInput
-                      labelText="Nom"
-                      id="city"
-                      formControlProps={{
-                        fullWidth: true
-                      }}
+                    <TextField
+                      id="Nom"
+                      label="Nom"
+                      value={reservationName}
+                      onInput={e => setReservationName(e.target.value)}
                     />
                   </GridItem>
                   <GridItem xs={12} sm={12} md={6}>
-                    <CustomInput
-                      labelText="Nombre de personnes"
-                      id="country"
-                      formControlProps={{
-                        fullWidth: true
-                      }}
-                    />
+                  <TextField
+                    type="number"
+                    id="nbre"
+                    label="Nombre personnes"
+                    // helperText="Nombre de personnes"
+                    value={numberPeople}
+                    onInput={e => setNumberPeople(e.target.value)}
+                  />
                   </GridItem>
                 </GridContainer>
               </CardBody>
               <CardFooter>
-                <Button color="info">Confirmer</Button>
+                <Button disabled={reservationName==='' || numberPeople==='' || selectedEndDate<selectedStartDate} onClick={() => { addReservation() }} color="info">Confirmer</Button>
+                <Box p={1}>
+                  <Danger>
+                    {(reservationName==='' || numberPeople==='' || selectedEndDate<selectedStartDate) ? 'Remplir tous les champs. Date de début après date de fin.' : ''}
+                  </Danger>
+                </Box>
               </CardFooter>
             </Card>
           </GridItem>
@@ -160,6 +210,32 @@ function Calendrier() {
     );
 }
 
-Calendar.layout = Admin;
 
-export default Calendar;
+Calendrier.getInitialProps = async (ctx) => {
+  return {
+    reservations: {
+      data: [
+        {
+          title: 'Jean',
+          start: '15/02/2021',
+          end: '17/02/2021',
+          nombre: 2,
+          valid: true,
+          paye: true,
+        },
+        {
+          title: 'Helene',
+          start: '03/02/2021',
+          end: '07/02/2021',
+          nombre: 2,
+          valid: false,
+          paye: false,
+        },
+      ],
+    }
+  }
+}
+
+Calendrier.layout = Admin;
+
+export default Calendrier;

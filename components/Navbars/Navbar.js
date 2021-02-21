@@ -11,7 +11,6 @@ import Hidden from "@material-ui/core/Hidden";
 // @material-ui/icons
 import Menu from "@material-ui/icons/Menu";
 // core components
-import AdminNavbarLinks from "./AdminNavbarLinks.js";
 import Button from "components/CustomButtons/Button.js";
 
 import styles from "assets/jss/nextjs-material-dashboard/components/headerStyle.js";
@@ -45,18 +44,6 @@ export default function Header(props) {
             {makeBrand()}
           </Button>
         </div>
-        <Hidden smDown implementation="css">
-          <AdminNavbarLinks />
-        </Hidden>
-        <Hidden mdUp implementation="css">
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={props.handleDrawerToggle}
-          >
-            <Menu />
-          </IconButton>
-        </Hidden>
       </Toolbar>
     </AppBar>
   );

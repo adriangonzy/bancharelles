@@ -13,7 +13,6 @@ import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import Icon from "@material-ui/core/Icon";
 // core components
-import AdminNavbarLinks from "components/Navbars/AdminNavbarLinks.js";
 
 import styles from "assets/jss/nextjs-material-dashboard/components/sidebarStyle.js";
 
@@ -91,7 +90,7 @@ export default function Sidebar(props) {
         target="_blank"
       >
         <div className={classes.logoImage}>
-          <img src={logo} alt="logo" className={classes.img} />
+          <img style={{ height: 25, width: 25}} src={logo} alt="logo" className={classes.img} />
         </div>
         {logoText}
       </a>
@@ -115,10 +114,6 @@ export default function Sidebar(props) {
           }}
         >
           {brand}
-          <div className={classes.sidebarWrapper}>
-            <AdminNavbarLinks />
-            {links}
-          </div>
           {image !== undefined ? (
             <div
               className={classes.background}
