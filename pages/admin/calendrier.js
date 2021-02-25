@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import Admin from "layouts/Admin.js";
 
@@ -27,9 +27,9 @@ import CardBody from "components/Card/CardBody.js";
 import CardFooter from "components/Card/CardFooter.js";
 import Box from '@material-ui/core/Box';
 
-
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 
+import 'isomorphic-fetch';
 
 const localizer = momentLocalizer(moment)
 
@@ -88,21 +88,23 @@ function eventStyleGetter(event, start, end) {
     };
 }
 
-
-
 function Calendrier(props) {
     const classes = useStyles();
-    const [reservations, updateReservations] = React.useState(props.reservations);
-    const myEventsList = createDate(reservations.data);
+    const [reservations, updateReservations] = useState(props.reservations);
 
-    const [selectedStartDate, setSelectedStartDate] = React.useState(moment(new Date()));
-    const [selectedEndDate, setSelectedEndDate] = React.useState(moment(new Date()));
+    // For rendering dates
+    const myEventsList = createDate(reservations);
 
-    const [reservationName, setReservationName] = React.useState('');
-    const [numberPeople, setNumberPeople] = React.useState('');
+    // Form state
+    const [selectedStartDate, setSelectedStartDate] = useState(moment(new Date()));
+    const [selectedEndDate, setSelectedEndDate] = useState(moment(new Date()));
+    const [reservationName, setReservationName] = useState('');
+    const [numberPeople, setNumberPeople] = useState('');
 
-    const addReservation = () => {
-      const newData = {
+    const [loading, setLoading] = useState(false);
+
+    const addReservation = async () => {
+      const newReservation = {
         title: reservationName,
         start: selectedStartDate.format("DD/MM/yyyy"),
         end: selectedEndDate.format("DD/MM/yyyy"),
@@ -110,15 +112,19 @@ function Calendrier(props) {
         valid: false,
         paye: false
       };
-      new Promise(resolve => {
-        setTimeout(() => {
-          resolve();
-          const data = [...reservations.data];
-          data.push(newData);
-          const newReservations = {...reservations, data};
-          updateReservations(newReservations);
-        }, 600);
-      })
+
+      setLoading(true);
+
+      // update
+      const response = await fetch('http://localhost:3000/api/reservations', {
+        method: 'POST',
+        body: JSON.stringify([newReservation, ...reservations])
+      });
+
+      updateReservations(await response.json());
+      
+      // reset
+      setLoading(false);
       setSelectedStartDate(moment(new Date()));
       setSelectedEndDate(moment(new Date()));
       setNumberPeople('');
@@ -149,7 +155,7 @@ function Calendrier(props) {
                 <h4 className={classes.cardTitleWhite}>Créer une nouvelle réservation</h4>
               </CardHeader>
               <CardBody>
-              Pour modifier ou supprimer une réservation, allez dans l'onglet Réservations.
+                Pour modifier ou supprimer une réservation, allez dans l'onglet Réservations.
                 <GridContainer>
                   <GridItem xs={12} sm={12} md={12}>
                     <MuiPickersUtilsProvider utils={MomentUtils}>
@@ -196,7 +202,7 @@ function Calendrier(props) {
                 </GridContainer>
               </CardBody>
               <CardFooter>
-                <Button disabled={reservationName==='' || numberPeople==='' || selectedEndDate<selectedStartDate} onClick={() => { addReservation() }} color="info">Confirmer</Button>
+                <Button disabled={loading || reservationName==='' || numberPeople==='' || selectedEndDate<selectedStartDate} onClick={addReservation} color="info">{ loading ? 'En cours' : 'Confirmer' }</Button>
                 <Box p={1}>
                   <Danger>
                     {(reservationName==='' || numberPeople==='' || selectedEndDate<selectedStartDate) ? 'Remplir tous les champs. Date de début après date de fin.' : ''}
@@ -210,30 +216,11 @@ function Calendrier(props) {
     );
 }
 
-
 Calendrier.getInitialProps = async (ctx) => {
+  const response = await fetch('http://localhost:3000/api/reservations');
   return {
-    reservations: {
-      data: [
-        {
-          title: 'Jean',
-          start: '15/02/2021',
-          end: '17/02/2021',
-          nombre: 2,
-          valid: true,
-          paye: true,
-        },
-        {
-          title: 'Helene',
-          start: '03/02/2021',
-          end: '07/02/2021',
-          nombre: 2,
-          valid: false,
-          paye: false,
-        },
-      ],
-    }
-  }
+    reservations: await response.json()
+  };
 }
 
 Calendrier.layout = Admin;
