@@ -122,7 +122,7 @@ function Calendrier(props) {
       });
 
       updateReservations(await response.json());
-      
+
       // reset
       setLoading(false);
       setSelectedStartDate(moment(new Date()));
@@ -194,7 +194,6 @@ function Calendrier(props) {
                     type="number"
                     id="nbre"
                     label="Nombre personnes"
-                    // helperText="Nombre de personnes"
                     value={numberPeople}
                     onInput={e => setNumberPeople(e.target.value)}
                   />

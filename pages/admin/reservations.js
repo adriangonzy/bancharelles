@@ -11,6 +11,8 @@ import {
 import MomentUtils from '@date-io/moment';
 import moment from 'moment';
 
+const today = moment(new Date())
+
 const table_columns = [
   {
     title: 'Nom', field: 'title',
@@ -19,7 +21,7 @@ const table_columns = [
   },
   {
     title: 'Date de début', field: 'start',
-    initialEditValue: new Date(),
+    initialEditValue: today.format("DD/MM/yyyy"),
     editComponent: ({value, onChange}) => (
       <MuiPickersUtilsProvider utils={MomentUtils}>
         <DatePicker
@@ -32,7 +34,7 @@ const table_columns = [
   },
   {
     title: "Date de fin", field: 'end',
-    initialEditValue: new Date(),
+    initialEditValue: today.format("DD/MM/yyyy"),
     validate: rowData => rowData.start > rowData.end ? { isValid: false, helperText: 'La date de fin doit etre après celle darrivée' } : true,
     editComponent: ({value, onChange}) => (
       <MuiPickersUtilsProvider utils={MomentUtils}>
@@ -97,71 +99,48 @@ function Reservations(props) {
       title="Liste des réservations"
       views={['month']}
       columns={table_columns}
-      data={reservations.data}
+      data={reservations}
       options={{
         draggable: false,
       }}
       editable={{
-        onRowAdd: newData =>
-          new Promise(resolve => {
-            setTimeout(() => {
-              resolve();
-              const data = [...reservations.data];
-              data.push(newData);
-              const newReservations = {...reservations, data};
-              updateReservations(newReservations);
-            }, 600);
-          }),
-        onRowUpdate: (newData, oldData) =>
-          new Promise(resolve => {
-            setTimeout(() => {
-              resolve();
-              if (oldData) {
-                const data = [...reservations.data];
-                data[data.indexOf(oldData)] = newData;
-                const newReservations = {...reservations, data};
-                updateReservations(newReservations);
-              }
-            }, 600);
-          }),
-        onRowDelete: oldData =>
-          new Promise(resolve => {
-            setTimeout(() => {
-              resolve();
-              const data = [...reservations.data];
-              data.splice(data.indexOf(oldData), 1);
-              const newReservations = {...reservations, data};
-              updateReservations(newReservations);
-            }, 600);
-          }),
+        onRowAdd: async newReservation => {
+          const response = await fetch('http://localhost:3000/api/reservations', {
+            method: 'POST',
+            body: JSON.stringify([newReservation, ...reservations])
+          });
+          updateReservations(await response.json());
+        },
+        onRowUpdate: async (newReservation, oldData) => {
+          const data = [...reservations];
+          data[data.indexOf(oldData)] = newReservation;
+          // console.log(data);
+          const response = await fetch('http://localhost:3000/api/reservations', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+          updateReservations(await response.json());
+        },
+        onRowDelete: async oldData => {
+          console.log(oldData);
+          const data = [...reservations];
+          data.splice(data.indexOf(oldData), 1);
+          const response = await fetch('http://localhost:3000/api/reservations', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+          updateReservations(await response.json());
+        }
       }}
     />
   );
 }
 
 Reservations.getInitialProps = async (ctx) => {
+  const response = await fetch('http://localhost:3000/api/reservations');
   return {
-    reservations: {
-      data: [
-        {
-          title: 'Jean',
-          start: '15/02/2021',
-          end: '17/02/2021',
-          nombre: 2,
-          valid: true,
-          paye: true,
-        },
-        {
-          title: 'Helene',
-          start: '03/02/2021',
-          end: '07/02/2021',
-          nombre: 2,
-          valid: false,
-          paye: false,
-        },
-      ],
-    }
-  }
+    reservations: await response.json()
+  };
 }
 
 Reservations.layout = Admin;
